@@ -230,6 +230,8 @@ const API = `${SUPABASE_URL}/rest/v1/bookings`;
 const H = { 'Content-Type':'application/json', 'apikey':SUPABASE_KEY, 'Authorization':`Bearer ${SUPABASE_KEY}`, 'Prefer':'return=representation' };
 
 const EQUIPMENT = [
+  { id:'outclave', name:'大型プレス機 or オートクレーブ',     emoji:'🗻', color:'#2c5f8a', light:'#e8f0f8' },
+  { id:'Instron', name:'引張試験機',     emoji:'🗻', color:'#2c5f8a', light:'#e8f0f8' },
   { id:'micro', name:'顕微鏡',     emoji:'🔬', color:'#2c5f8a', light:'#e8f0f8' },
   { id:'cent',  name:'遠心分離機', emoji:'⚙️', color:'#2a7a4e', light:'#e6f4ec' },
   { id:'pcr',   name:'PCR装置',    emoji:'🧬', color:'#8a3a2a', light:'#faeae6' },
