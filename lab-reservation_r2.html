@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>実験装置予約システム Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f4f2ee; --surface: #ffffff; --surface2: #f0ede8;
+  --border: rgba(0,0,0,0.10); --border2: rgba(0,0,0,0.18);
+  --text: #1a1814; --text2: #6b6660; --text3: #aaa49e;
+  --accent: #2c5f8a; --accent-light: #e8f0f8; --accent-text: #1a3f60;
+  --success: #2a7a4e; --success-light: #e6f4ec;
+  --danger: #b84040; --danger-light: #faeaea;
+  --radius: 10px; --radius-lg: 14px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.6; }
+.layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+.sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; gap: 2rem; }
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon { width: 36px; height: 36px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; }
+.logo-text { font-size: 13px; font-weight: 700; }
+.nav-label { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; margin-bottom: 6px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--radius); cursor: pointer; color: var(--text2); font-size: 13px; font-weight: 500; border: none; background: none; width: 100%; text-align: left; transition: .12s; }
+.nav-item:hover { background: var(--surface2); }
+.nav-item.active { background: var(--accent-light); color: var(--accent-text); }
+
+.main { padding: 2rem 2.5rem; max-width: 900px; margin: 0 auto; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; }
+.card-title { font-size: 14px; font-weight: 700; margin-bottom: 1.2rem; display: flex; justify-content: space-between; align-items: center; }
+
+/* タイムライン表示 */
+.timeline-container { position: relative; background: #fafafa; border: 1px solid var(--border); border-radius: 8px; margin: 1rem 0; padding: 10px 0; overflow-x: auto; }
+.timeline-ruler { display: flex; border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-bottom: 10px; min-width: 600px; }
+.time-label { flex: 1; font-size: 10px; color: var(--text3); text-align: center; border-left: 1px solid var(--border2); }
+.timeline-track { position: relative; height: 50px; background: #fff; min-width: 600px; }
+.booked-bar { position: absolute; height: 34px; top: 8px; background: var(--accent); opacity: 0.3; border-radius: 4px; border: 1px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--accent-text); font-weight: 700; pointer-events: none; }
+
+/* 選択フォーム */
+.time-select-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 1rem; }
+select { width: 100%; padding: 10px; border-radius: var(--radius); border: 1px solid var(--border2); font-family: 'DM Mono', monospace; }
+
+/* 既存スタイル継承・調整 */
+.eq-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.eq-card { border: 1.5px solid var(--border); border-radius: var(--radius); padding: 12px; cursor: pointer; transition: .15s; }
+.eq-card.selected { border-color: var(--accent); background: var(--accent-light); }
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; }
+.cal-day { aspect-ratio: 1.2; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; font-family: 'DM Mono'; font-size: 13px; }
+.cal-day.selected { background: var(--accent); color: #fff; }
+.cal-day.past { color: var(--text3); opacity: 0.5; cursor: default; }
+
+.btn { padding: 12px 24px; border-radius: var(--radius); font-weight: 700; cursor: pointer; border: none; transition: .2s; }
+.btn-primary { background: var(--accent); color: #fff; width: 100%; }
+.btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+.btn-ghost { background: none; border: 1px solid var(--border2); font-size: 12px; padding: 4px 10px; }
+.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">🔬</div>
+      <div><div class="logo-text">実験室予約</div></div>
+    </div>
+    <nav>
+      <div class="nav-label">MENU</div>
+      <button class="nav-item active" onclick="location.reload()">📅 新規予約</button>
+      <button class="nav-item" onclick="showPage('list')">📋 予約一覧</button>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div id="page-reserve">
+      <h2 style="margin-bottom: 1.5rem;">装置の予約</h2>
+
+      <div class="card" id="card-eq">
+        <div class="card-title">1. 装置を選択</div>
+        <div class="eq-grid" id="eq-grid"></div>
+      </div>
+
+      <div class="card hidden" id="card-cal">
+        <div class="card-title">2. 日付を選択 <button class="btn-ghost" onclick="resetStep(1)">戻る</button></div>
+        <div style="text-align:center; margin-bottom:10px; font-weight:bold" id="cal-month-label"></div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+
+      <div class="card hidden" id="card-time">
+        <div class="card-title">3. 時間を選択 <button class="btn-ghost" onclick="resetStep(2)">戻る</button></div>
+        
+        <div id="timeline-label" style="font-size: 12px; color: var(--text2); margin-bottom: 5px;"></div>
+        <div class="timeline-container">
+          <div class="timeline-ruler" id="timeline-ruler"></div>
+          <div class="timeline-track" id="timeline-track">
+            </div>
+        </div>
+
+        <div class="time-select-grid">
+          <div>
+            <label style="font-size:11px; display:block">開始時間</label>
+            <select id="start-time" onchange="validateTimeSelection()"></select>
+          </div>
+          <div>
+            <label style="font-size:11px; display:block">終了時間</label>
+            <select id="end-time" onchange="validateTimeSelection()"></select>
+          </div>
+        </div>
+        <div id="time-error" style="color:var(--danger); font-size:12px; margin-bottom:10px; min-height:1.6em"></div>
+      </div>
+
+      <div class="card hidden" id="card-form">
+        <div class="card-title">4. 予約者情報</div>
+        <input type="text" id="user-name" placeholder="お名前" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid var(--border2)" oninput="validateTimeSelection()">
+        <button class="btn btn-primary" id="btn-submit" disabled onclick="submitBooking()">予約を確定する</button>
+      </div>
+    </div>
+
+    <div id="page-list" class="hidden">
+      <h2 style="margin-bottom: 1.5rem;">予約一覧</h2>
+      <div id="list-container"></div>
+      <button class="btn-ghost" style="margin-top:20px" onclick="location.reload()">戻る</button>
+    </div>
+  </main>
+</div>
+
+<script>
+// Supabase設定（提供されたキーを維持）
+const SUPABASE_URL = 'https://zfvhltwqinubtnmoramn.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpmdmhsdHdxaW51YnRubW9yYW1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NzA0NDMsImV4cCI6MjA5MjE0NjQ0M30.VilherW-_8eejm5TJFTaJLfA13wQjyXvbo938lj8-r8';
+const API = `${SUPABASE_URL}/rest/v1/bookings`;
+const HEADERS = { 'Content-Type':'application/json', 'apikey':SUPABASE_KEY, 'Authorization':`Bearer ${SUPABASE_KEY}`, 'Prefer':'return=representation' };
+
+const EQUIPMENT = [
+  { id:'outclave', name:'大型プレス機', emoji:'🗻', color:'#2c5f8a' },
+  { id:'micro', name:'顕微鏡', emoji:'🔬', color:'#2a7a4e' },
+  { id:'cent', name:'遠心分離機', emoji:'⚙️', color:'#8a3a2a' },
+  { id:'spec', name:'分光光度計', emoji:'💡', color:'#8a6a1a' }
+];
+
+// 9:00から21:00まで30分刻み
+const TIME_SLOTS = [];
+for(let h=9; h<=21; h++) {
+  TIME_SLOTS.push(`${h}:00`);
+  if(h < 21) TIME_SLOTS.push(`${h}:30`);
+}
+
+let selEq = null, selDate = null, bookings = [];
+
+// 初期化
+async function init() {
+  renderEquipment();
+  renderTimeOptions();
+  renderTimelineRuler();
+  await refreshBookings();
+}
+
+function renderEquipment() {
+  const grid = document.getElementById('eq-grid');
+  grid.innerHTML = EQUIPMENT.map(eq => `
+    <div class="eq-card" id="eq-${eq.id}" onclick="selectEq('${eq.id}')">
+      <div style="font-size:24px">${eq.emoji}</div>
+      <div style="font-weight:700; font-size:12px">${eq.name}</div>
+    </div>
+  `).join('');
+}
+
+function selectEq(id) {
+  selEq = id;
+  document.querySelectorAll('.eq-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById(`eq-${id}`).classList.add('selected');
+  document.getElementById('card-cal').classList.remove('hidden');
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const now = new Date();
+  const calGrid = document.getElementById('cal-grid');
+  document.getElementById('cal-month-label').textContent = `${now.getFullYear()}年 ${now.getMonth()+1}月`;
+  
+  let html = '';
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  
+  for(let i=1; i<=daysInMonth; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth(), i);
+    const dateStr = d.toISOString().split('T')[0];
+    const isPast = d < new Date().setHours(0,0,0,0);
+    html += `<div class="cal-day ${isPast?'past':''} ${selDate===dateStr?'selected':''}" onclick="${isPast?'':'selectDate(\''+dateStr+'\')'}">
+      <span style="font-size:10px">${['日','月','火','水','木','金','土'][d.getDay()]}</span>
+      ${i}
+    </div>`;
+  }
+  calGrid.innerHTML = html;
+}
+
+function selectDate(date) {
+  selDate = date;
+  renderCalendar();
+  document.getElementById('card-time').classList.remove('hidden');
+  document.getElementById('card-form').classList.remove('hidden');
+  document.getElementById('timeline-label').textContent = `${date} の予約状況`;
+  updateTimeline();
+  validateTimeSelection();
+}
+
+function renderTimeOptions() {
+  const startSelect = document.getElementById('start-time');
+  const endSelect = document.getElementById('end-time');
+  const options = TIME_SLOTS.map(t => `<option value="${t}">${t}</option>`).join('');
+  startSelect.innerHTML = options;
+  endSelect.innerHTML = options;
+  endSelect.value = "10:00";
+}
+
+function renderTimelineRuler() {
+  const ruler = document.getElementById('timeline-ruler');
+  const hours = [9,11,13,15,17,19,21];
+  ruler.innerHTML = hours.map(h => `<div class="time-label">${h}:00</div>`).join('');
+}
+
+function updateTimeline() {
+  const track = document.getElementById('timeline-track');
+  track.innerHTML = '';
+  
+  const dayBookings = bookings.filter(b => b.date === selDate && b.eq_id === selEq);
+  
+  dayBookings.forEach(b => {
+    // 時間を位置（%）に変換 (9:00 = 0%, 21:00 = 100%)
+    const startPos = timeToPercent(b.start_time || b.slot); // 既存データ(slot)互換
+    const endPos = b.end_time ? timeToPercent(b.end_time) : startPos + 8.33; // 1時間分
+    
+    const bar = document.createElement('div');
+    bar.className = 'booked-bar';
+    bar.style.left = `${startPos}%`;
+    bar.style.width = `${endPos - startPos}%`;
+    bar.textContent = '予約済';
+    track.appendChild(bar);
+  });
+}
+
+function timeToPercent(timeStr) {
+  const [h, m] = timeStr.split(':').map(Number);
+  const totalMinutes = (h - 9) * 60 + m;
+  const maxMinutes = (21 - 9) * 60;
+  return Math.max(0, Math.min(100, (totalMinutes / maxMinutes) * 100));
+}
+
+function validateTimeSelection() {
+  const start = document.getElementById('start-time').value;
+  const end = document.getElementById('end-time').value;
+  const name = document.getElementById('user-name').value;
+  const errorEl = document.getElementById('time-error');
+  const btn = document.getElementById('btn-submit');
+  
+  const startMin = timeToMin(start);
+  const endMin = timeToMin(end);
+  
+  let error = "";
+  
+  if (startMin >= endMin) {
+    error = "終了時間は開始時間より後に設定してください。";
+  } else {
+    // 重複チェック
+    const hasOverlap = bookings.some(b => {
+      if(b.date !== selDate || b.eq_id !== selEq) return false;
+      const bStart = timeToMin(b.start_time || b.slot);
+      const bEnd = b.end_time ? timeToMin(b.end_time) : bStart + 60;
+      return (startMin < bEnd && endMin > bStart);
+    });
+    if(hasOverlap) error = "指定の時間帯は既に予約されています。";
+  }
+
+  errorEl.textContent = error;
+  btn.disabled = !!error || !name.trim() || !selEq || !selDate;
+}
+
+function timeToMin(t) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+async function refreshBookings() {
+  try {
+    const res = await fetch(`${API}?order=date,start_time`, { headers: HEADERS });
+    bookings = await res.json();
+  } catch (e) { console.error("データ取得失敗", e); }
+}
+
+async function submitBooking() {
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.textContent = "送信中...";
+  
+  const eq = EQUIPMENT.find(e => e.id === selEq);
+  const payload = {
+    eq_id: selEq,
+    eq_name: eq.name,
+    eq_emoji: eq.emoji,
+    date: selDate,
+    start_time: document.getElementById('start-time').value,
+    end_time: document.getElementById('end-time').value,
+    slot: document.getElementById('start-time').value, // 互換性維持
+    name: document.getElementById('user-name').value,
+    purpose: "Web予約"
+  };
+
+  try {
+    const res = await fetch(API, { method:'POST', headers:HEADERS, body:JSON.stringify(payload) });
+    if(!res.ok) throw new Error("予約に失敗しました");
+    alert("予約が完了しました！");
+    location.reload();
+  } catch (e) {
+    alert(e.message);
+    btn.disabled = false;
+    btn.textContent = "予約を確定する";
+  }
+}
+
+function showPage(p) {
+  document.getElementById('page-reserve').classList.toggle('hidden', p==='list');
+  document.getElementById('page-list').classList.toggle('hidden', p==='reserve');
+  if(p==='list') renderList();
+}
+
+function renderList() {
+  const container = document.getElementById('list-container');
+  const sorted = [...bookings].sort((a,b) => a.date.localeCompare(b.date));
+  container.innerHTML = sorted.map(b => `
+    <div style="background:#fff; padding:15px; border-radius:10px; border:1px solid var(--border); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center">
+      <div>
+        <div style="font-weight:bold">${b.eq_emoji} ${b.eq_name}</div>
+        <div style="font-size:12px; color:var(--text2)">${b.date} | ${b.start_time || b.slot} 〜 ${b.end_time || '-'}</div>
+        <div style="font-size:12px">👤 ${b.name}</div>
+      </div>
+    </div>
+  `).join('') || '予約はありません';
+}
+
+function resetStep(step) {
+  if(step === 1) {
+    document.getElementById('card-cal').classList.add('hidden');
+    document.getElementById('card-time').classList.add('hidden');
+    document.getElementById('card-form').classList.add('hidden');
+    selEq = null;
+  } else if (step === 2) {
+    document.getElementById('card-time').classList.add('hidden');
+    document.getElementById('card-form').classList.add('hidden');
+    selDate = null;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
