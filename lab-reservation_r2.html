@@ -507,7 +507,7 @@ function renderTimeGrid(){
     if(bk){
       cls+=' booked';
       const nm=bookedByName(t);
-      sub=nm?nm.slice(0,5)+(nm.length>5?'…':'')+:'予約済';
+      sub=nm?nm.slice(0,5)+(nm.length>5?'…':''):'予約済';
     } else if(selStart&&selEnd){
       if(t===selStart||t===selEnd) cls+=' start';
       else if(tMin>sMin&&tMin<eMin) cls+=' in-range';
