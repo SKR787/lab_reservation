@@ -65,14 +65,14 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .card-title{font-size:13px;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:6px}
 
 /* Equipment */
-.eq-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:9px}
+.eq-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
 .eq-card{border:1.5px solid var(--border);border-radius:var(--radius);padding:13px;cursor:pointer;transition:all .15s;background:var(--surface);position:relative;overflow:hidden}
 .eq-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--eq-color,var(--border));transition:height .15s}
 .eq-card:hover{border-color:var(--eq-color,var(--border2));transform:translateY(-1px);box-shadow:0 3px 12px rgba(0,0,0,.07)}
 .eq-card.selected{border-color:var(--eq-color);background:var(--eq-light)}
 .eq-card.selected::before{height:4px}
-.eq-emoji{font-size:26px;margin-bottom:7px;display:block}
-.eq-name{font-size:13px;font-weight:700;margin-bottom:3px}
+.eq-emoji{font-size:22px;margin-bottom:5px;display:block}
+.eq-name{font-size:12px;font-weight:700;margin-bottom:3px;line-height:1.35}
 .eq-avail{font-size:11px;color:var(--success);font-weight:500}
 .eq-avail.busy{color:var(--danger)}
 
@@ -324,10 +324,24 @@ const API = `${SUPABASE_URL}/rest/v1/bookings`;
 const H = {'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`,'Prefer':'return=representation'};
 
 const EQUIPMENT = [
-  {id:'micro',name:'顕微鏡',    emoji:'🔬',color:'#2c5f8a',light:'#e8f0f8'},
-  {id:'cent', name:'遠心分離機',emoji:'⚙️',color:'#2a7a4e',light:'#e6f4ec'},
-  {id:'pcr',  name:'PCR装置',   emoji:'🧬',color:'#8a3a2a',light:'#faeae6'},
-  {id:'spec', name:'分光光度計',emoji:'💡',color:'#8a6a1a',light:'#faf3e0'},
+  {id:'exp_utm',      name:'実験棟　万能試験機',                                    emoji:'🏗️',color:'#2c5f8a',light:'#e8f0f8'},
+  {id:'r113_desk',    name:'113室 卓上万能試験機',                                  emoji:'🔩',color:'#3a6b3a',light:'#e8f4e8'},
+  {id:'r113_5982',    name:'113室 万能試験機5982型 (5kNロードセルは別途予約必要)',   emoji:'⚙️',color:'#5a4a8a',light:'#f0ecfa'},
+  {id:'r113_xct',     name:'113室 X線CT',                                           emoji:'🩻',color:'#8a3a2a',light:'#faeae6'},
+  {id:'azwan_press',  name:'アズワン 熱プレス機',                                   emoji:'🔥',color:'#9a4a1a',light:'#fdf0e6'},
+  {id:'toyo_press',   name:'東洋精機 熱プレス機',                                   emoji:'🔥',color:'#8a5a1a',light:'#fdf5e6'},
+  {id:'coe_utm',      name:'COE棟　万能試験機',                                     emoji:'🏗️',color:'#1a5a7a',light:'#e6f2fa'},
+  {id:'coe_hyd',      name:'COE棟　油圧試験機',                                     emoji:'💧',color:'#1a4a8a',light:'#e6eefa'},
+  {id:'exp_impact',   name:'実験棟　衝撃試験機',                                    emoji:'💥',color:'#7a2a2a',light:'#fae8e8'},
+  {id:'exp_auto',     name:'実験棟 オートクレーブ or 大型プレス機',                 emoji:'🫧',color:'#2a6a5a',light:'#e6f5f0'},
+  {id:'r113_dma',     name:'113号室 DMA7100 HITACHI',                               emoji:'📊',color:'#4a3a7a',light:'#eeeafa'},
+  {id:'r113_dsc',     name:'113室 DSC',                                             emoji:'🌡️',color:'#7a4a2a',light:'#faf0e6'},
+  {id:'r113_tma',     name:'113室 TMA',                                             emoji:'📐',color:'#2a5a4a',light:'#e6f5f0'},
+  {id:'exp_3dscan',   name:'実験棟：3Dスキャン',                                    emoji:'🔵',color:'#1a6a8a',light:'#e6f4fa'},
+  {id:'coe_pulse',    name:'COE棟：エレクトロパルス',                               emoji:'⚡',color:'#6a4a1a',light:'#faf4e6'},
+  {id:'coe_rheo',     name:'COE棟：レオメーター',                                   emoji:'🌀',color:'#3a4a8a',light:'#eaeefa'},
+  {id:'coe_ultra',    name:'COE棟：超音波探傷機',                                   emoji:'〰️',color:'#1a5a5a',light:'#e6f5f5'},
+  {id:'r113_5kn',     name:'113号室: 5kN ロードセル',                               emoji:'⚖️',color:'#5a5a2a',light:'#f5f5e6'},
 ];
 
 // 選択できる時刻リスト（スロットの境界）
@@ -507,7 +521,7 @@ function renderTimeGrid(){
     if(bk){
       cls+=' booked';
       const nm=bookedByName(t);
-      sub=nm?nm.slice(0,5)+(nm.length>5?'…':''):'予約済';
+      sub=nm?nm.slice(0,5)+(nm.length>5?'…':'')+'さん':'予約済';
     } else if(selStart&&selEnd){
       if(t===selStart||t===selEnd) cls+=' start';
       else if(tMin>sMin&&tMin<eMin) cls+=' in-range';
